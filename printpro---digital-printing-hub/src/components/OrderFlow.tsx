@@ -120,53 +120,55 @@ export const OrderFlow = ({ onBack }: { onBack: () => void }) => {
       
     return base * pagesToPrint * config.volume;
   };
+const handlePayment = async () => {
+    if (!file) { alert("Please select a file first"); return; }
+    
+    const BACKEND_URL = "https://nonfraudulently-nonreigning-laquita.ngrok-free.dev";
 
-  const handlePayment = () => {
-    if (!(window as any).Razorpay) {
-      alert("Razorpay SDK not loaded. Please check your internet connection.");
-      return;
-    }
+    try {
+      // 1. Tell the Pi to create a Razorpay Order
+      const orderResponse = await fetch(`${BACKEND_URL}/create_order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: calculateTotal() * 100 })
+      });
+      const order = await orderResponse.json();
 
-    const options = {
-      key: (import.meta as any).env.VITE_RAZORPAY_KEY_ID || 'rzp_test_SIrqVQ9QYwGEkZ',
-      amount: calculateTotal() * 100,
-      currency: "INR",
-      name: "PrintPro Digital",
-      description: "Document Printing Service",
-      image: "https://picsum.photos/200",
-     handler: async function (response: any) {
-        console.log("Payment Success:", response);
-        setStep('PROCESSING');
-
-        // Prepare the data to send to the Raspberry Pi
-        const formData = new FormData();
-        if (file) formData.append('file', file);
-        formData.append('razorpay_order_id', response.razorpay_order_id);
-        formData.append('razorpay_payment_id', response.razorpay_payment_id);
-        formData.append('razorpay_signature', response.razorpay_signature);
-        formData.append('color', config.mode === 'COLOR' ? 'Color' : 'Gray');
-
-        try {
-          // Change this URL to your active NGROK URL
-          const BACKEND_URL = "https://nonfraudulently-nonreigning-laquita.ngrok-free.dev";
+      // 2. Open Razorpay using the Order ID from the Pi
+      const options = {
+        key: 'rzp_test_YOUR_KEY_ID', // Replace with your real ID
+        amount: order.amount,
+        currency: "INR",
+        name: "SmartPrint Pi",
+        order_id: order.id, // This links the payment to your Pi
+        handler: async function (response: any) {
+          setStep('PROCESSING');
           
-          const result = await fetch(`${BACKEND_URL}/verify_and_print`, {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('razorpay_order_id', response.razorpay_order_id);
+          formData.append('razorpay_payment_id', response.razorpay_payment_id);
+          formData.append('razorpay_signature', response.razorpay_signature);
+          formData.append('color', config.mode);
+
+          // 3. Send the successful payment and file to the Pi
+          const printResult = await fetch(`${BACKEND_URL}/verify_and_print`, {
             method: 'POST',
-            body: formData,
+            body: formData
           });
 
-          if (result.ok) {
-            setStep('SUCCESS');
-          } else {
-            alert("Payment verified but Printer failed. Check Pi terminal.");
-            setStep('CONFIG');
-          }
-        } catch (error) {
-          console.error("Error sending to Pi:", error);
-          alert("Could not connect to the Raspberry Pi. Is Ngrok running?");
-          setStep('CONFIG');
+          if (printResult.ok) { setStep('SUCCESS'); } 
+          else { alert("Payment ok, but Printer failed."); setStep('CONFIG'); }
         }
-      },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+
+    } catch (err) {
+      alert("Could not connect to the Pi. Check if Ngrok is running.");
+    }
+  };
       prefill: {
         name: "Customer",
         email: "customer@example.com",
