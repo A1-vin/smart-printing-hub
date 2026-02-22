@@ -134,12 +134,38 @@ export const OrderFlow = ({ onBack }: { onBack: () => void }) => {
       name: "PrintPro Digital",
       description: "Document Printing Service",
       image: "https://picsum.photos/200",
-      handler: function (response: any) {
+     handler: async function (response: any) {
         console.log("Payment Success:", response);
         setStep('PROCESSING');
-        setTimeout(() => {
-          setStep('SUCCESS');
-        }, 3000);
+
+        // Prepare the data to send to the Raspberry Pi
+        const formData = new FormData();
+        if (file) formData.append('file', file);
+        formData.append('razorpay_order_id', response.razorpay_order_id);
+        formData.append('razorpay_payment_id', response.razorpay_payment_id);
+        formData.append('razorpay_signature', response.razorpay_signature);
+        formData.append('color', config.mode === 'COLOR' ? 'Color' : 'Gray');
+
+        try {
+          // Change this URL to your active NGROK URL
+          const BACKEND_URL = "https://nonfraudulently-nonreigning-laquita.ngrok-free.dev";
+          
+          const result = await fetch(`${BACKEND_URL}/verify_and_print`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (result.ok) {
+            setStep('SUCCESS');
+          } else {
+            alert("Payment verified but Printer failed. Check Pi terminal.");
+            setStep('CONFIG');
+          }
+        } catch (error) {
+          console.error("Error sending to Pi:", error);
+          alert("Could not connect to the Raspberry Pi. Is Ngrok running?");
+          setStep('CONFIG');
+        }
       },
       prefill: {
         name: "Customer",
