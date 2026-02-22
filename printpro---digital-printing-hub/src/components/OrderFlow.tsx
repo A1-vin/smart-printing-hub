@@ -136,7 +136,7 @@ const handlePayment = async () => {
 
       // 2. Open Razorpay using the Order ID from the Pi
       const options = {
-        key: 'rzp_test_YOUR_KEY_ID', // Replace with your real ID
+        key: 'rzp_test_SIrqVQ9QYwGEkZ', // Replace with your real ID
         amount: order.amount,
         currency: "INR",
         name: "SmartPrint Pi",
