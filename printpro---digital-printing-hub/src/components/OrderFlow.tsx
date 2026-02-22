@@ -128,7 +128,7 @@ export const OrderFlow = ({ onBack }: { onBack: () => void }) => {
     }
 
     const options = {
-      key: (import.meta as any).env.VITE_RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_ID',
+      key: (import.meta as any).env.VITE_RAZORPAY_KEY_ID || 'rzp_test_SIrqVQ9QYwGEkZ',
       amount: calculateTotal() * 100,
       currency: "INR",
       name: "PrintPro Digital",
