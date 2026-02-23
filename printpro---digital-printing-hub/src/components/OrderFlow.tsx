@@ -123,7 +123,7 @@ export const OrderFlow = ({ onBack }: { onBack: () => void }) => {
 const handlePayment = async () => {
     if (!file) { alert("Please select a file first"); return; }
     
-    const BACKEND_URL = "https://nonfraudulently-nonreigning-laquita.ngrok-free.dev";
+    const BACKEND_URL = "https://nonfraudulently-nonreigning-laquita.ngrok-free.dev;"
 
     try {
       // 1. Tell the Pi to create a Razorpay Order
